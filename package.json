@@ -1,0 +1,27 @@
+{
+    "name": "typescript",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node dist/main.js",
+        "start:dummy": "node dist/main.js --dummy",
+        "build": "tsc",
+        "format": "prettier --write .",
+        "clean": "rm -rf dist"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@inquirer/prompts": "^4.3.2",
+        "chalk": "^5.3.0",
+        "typescript": "^5.4.3"
+    },
+    "devDependencies": {
+        "@tsconfig/node20": "^20.1.2",
+        "@types/node": "^20.11.30",
+        "prettier": "^3.2.5"
+    }
+}
