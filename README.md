@@ -58,6 +58,8 @@ O padrão Strategy foi utilizado para implementar a funcionalidade de busca de c
 
 ## Execução
 
+### Local
+
 ```bash
 $ npm install
 $ npm run build
@@ -68,6 +70,18 @@ Se preferir, você pode executar o programa com dados genéricos para teste, est
 
 ```bash
 $ npm run start:dummy
+```
+
+### Docker
+
+```bash
+$ docker compose run lista1
+```
+
+Se preferir, você pode executar o programa com dados genéricos para teste, estes dados estão em `src/data/data.json`.
+
+```bash
+$ docker compose run lista1 --dummy
 ```
 
 ## Arquitetura

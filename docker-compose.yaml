@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+    lista1:
+        container_name: lista1
+        image: lista_1_arq_software
+        build:
+            context: .
+            dockerfile: Dockerfile
+        stdin_open: true
+        tty: true
