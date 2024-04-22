@@ -11,7 +11,10 @@
 -   [Padrões de Projeto Implementados](#padrões-de-projeto-implementados)
     -   [1. Decorator](#1-decorator)
     -   [2. Strategy](#2-strategy)
+-   [Refatoração SOLID](#refatoração-solid)
 -   [Execução](#execução)
+    -   [Local](#local)
+    -   [Docker](#docker)
 -   [Arquitetura](#arquitetura)
 
 ## Integrantes
@@ -55,6 +58,13 @@ O padrão Strategy é um padrão comportamental que permite definir uma família
 Mais informações sobre o padrão Strategy podem ser encontradas [aqui](https://refactoring.guru/design-patterns/strategy).
 
 O padrão Strategy foi utilizado para implementar a funcionalidade de busca de contatos, permitindo que diferentes algoritmos de busca possam ser utilizados.
+
+## Refatoração SOLID
+
+Foi modificado a forma em como o aplicativo é executado, antes eram várias funções que recebiam um manager ESPECÍFICO e executava tarefas
+em cima dele, agora criou-se uma classe App que guarda uma instância de Manager(interface), além de outros parâmetros necessários para
+a execução do app, permitindo a utilização do aplicativo por qualquer manager concreto. (Inversão de Dependência.)
+Além de refatorações que violavam o SRP, onde métodos executavam mais de uma função.
 
 ## Execução
 
