@@ -1,100 +1,98 @@
 import { confirm, input, select } from "@inquirer/prompts";
-import { Contact } from "../contacts/contact.js";
-import { ContactsManager } from "../contacts/contactManager.js";
-import {
-    SearchContactsByName,
-    SearchContactsByEmail,
-    SearchContactsByPhone,
-    SearchingContacts,
-} from "../contacts/contactSearch.js";
+import Searching from "../core/search.js";
+import Manager from "../core/manager.js";
 import screen from "./screen.js";
 
-const SEARCH_MAP: { [k: string]: SearchingContacts } = {
-    name: new SearchContactsByName(),
-    email: new SearchContactsByEmail(),
-    phone: new SearchContactsByPhone(),
+type Choices<T, B> = {
+    name: string;
+    value: Searching<T, B>;
 };
 
-export async function getNewSearchTerm(by: string): Promise<string> {
-    return await input({
-        message: `Enter the contact's ${by}: `,
-        theme: { prefix: "" },
-    });
-}
+export default class App<T, B> {
+    #manager: Manager<T, B>;
+    private newItemInputs: string[];
+    private createNewItem: (s: string[]) => T;
+    private createConfirmMessage: (t: T) => string;
+    private searchAlgorithmChoices: Choices<T, B>[];
 
-export async function getNewSearchAlgorithm(): Promise<SearchingContacts> {
-    const choices = Object.entries(SEARCH_MAP).map(([name, value]) => {
-        return {
-            name,
-            value,
-        };
-    });
-    return await select({
-        message: "Search contacts by: ",
-        choices,
-        theme: { prefix: "" },
-    });
-}
-
-export async function getNewContact(): Promise<Contact> {
-    let c = false;
-    let contact: Contact;
-    while (true) {
-        const name = await input({
-            message: "Enter the contatc's name: ",
-            theme: { prefix: "" },
-        });
-        const email = await input({
-            message: "Enter the contatc's email: ",
-            theme: { prefix: "" },
-        });
-        const phone = await input({
-            message: "Enter the contatc's phone: ",
-            theme: { prefix: "" },
-        });
-
-        contact = new Contact(name, phone, email);
-
-        const confirmMessage = `${contact.toString()}\nAre you sure that you want this contact? `;
-
-        c = await confirm({ message: confirmMessage, theme: { prefix: "" } });
-        if (!c) {
-            screen.clearAllFromCursor(2, 0);
-            continue;
-        }
-        break;
+    constructor(
+        manager: Manager<T, B>,
+        newItemInputs: string[],
+        createNewItem: (s: string[]) => T,
+        createConfirmMessage: (t: T) => string,
+        searchAlgorithmChoices: Choices<T, B>[],
+    ) {
+        this.#manager = manager;
+        this.newItemInputs = newItemInputs;
+        this.createNewItem = createNewItem;
+        this.createConfirmMessage = createConfirmMessage;
+        this.searchAlgorithmChoices = searchAlgorithmChoices;
     }
 
-    return contact!;
-}
+    async getNewSearchTerm(message: string): Promise<string> {
+        return input({
+            message,
+            theme: { prefix: "" },
+        });
+    }
 
-export function addContact(manager: ContactsManager, contact: Contact) {
-    manager.add(contact);
-}
+    async getNewSearchAlgorithm(): Promise<Searching<T, B>> {
+        return await select({
+            message: "Search contacts by: ",
+            choices: this.searchAlgorithmChoices,
+            theme: { prefix: "" },
+        });
+    }
 
-export function removeContact(manager: ContactsManager, contact: Contact) {
-    manager.remove(contact);
-}
+    async getNewItem(): Promise<T> {
+        let c = false;
+        let item: T;
+        while (true) {
+            const inputs: string[] = [];
+            for (const message of this.newItemInputs) {
+                const i = await input({
+                    message,
+                    theme: { prefix: "" },
+                });
+                inputs.push(i);
+            }
 
-export function listContacts(manager: ContactsManager) {
-    manager.list();
-}
+            item = this.createNewItem(inputs);
 
-export function searchContacts(
-    manager: ContactsManager,
-    searchAlgorithm: SearchingContacts,
-    searchTerm: string,
-) {
-    manager.setSearchAlgorithm(searchAlgorithm);
-    return manager.search(searchTerm);
-}
+            const confirmMessage = this.createConfirmMessage(item);
 
-export default {
-    getNewSearchTerm,
-    getNewSearchAlgorithm,
-    getNewContact,
-    addContact,
-    removeContact,
-    searchContacts,
-    listContacts,
-};
+            c = await confirm({
+                message: confirmMessage,
+                theme: { prefix: "" },
+            });
+            if (!c) {
+                screen.clearAllFromCursor(2, 0);
+                continue;
+            }
+            break;
+        }
+
+        return item;
+    }
+
+    async addItem() {
+        this.#manager.add(await this.getNewItem());
+    }
+
+    async removeItem() {
+        this.#manager.remove(await this.getNewItem());
+    }
+
+    listItems() {
+        this.#manager.list();
+    }
+
+    async searchItem() {
+        let searchAlgorithm = await this.getNewSearchAlgorithm();
+        let searchTerm = (await this.getNewSearchTerm(
+            `Enter the ${searchAlgorithm.searchBy()} to search by: `,
+        )) as B;
+        this.#manager.setSearchAlgorithm(searchAlgorithm);
+        return this.#manager.search(searchTerm);
+    }
+}

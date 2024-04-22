@@ -1,13 +1,19 @@
 import { select, input } from "@inquirer/prompts";
 import chalk from "chalk";
-import app from "./app/app.js";
+import App from "./app/app.js";
 import screen from "./app/screen.js";
 import { getData } from "./data/data.js";
 import {
     ContactsManagerComponent,
     ContactsManagerLog,
 } from "./contacts/contactManager.js";
-import { SearchContactsByName } from "./contacts/contactSearch.js";
+import {
+    SearchContactsByEmail,
+    SearchContactsByName,
+    SearchContactsByPhone,
+    SearchingContacts,
+} from "./contacts/contactSearch.js";
+import { Contact } from "./contacts/contact.js";
 
 enum CHOICES {
     ADD,
@@ -48,8 +54,49 @@ async function main() {
     );
     const managerLog = new ContactsManagerLog(baseManager);
 
+    const newItemInputs: string[] = [
+        "Enter the contatc's name: ",
+        "Enter the contatc's email: ",
+        "Enter the contatc's phone: ",
+    ];
+
+    function createNewItem(s: string[]): Contact {
+        if (s.length !== 3) {
+            throw new Error("Invalid Contact's arguments");
+        }
+        const name = s[0];
+        const email = s[1];
+        const phone = s[2];
+        return new Contact(name, phone, email);
+    }
+
+    function createConfirmMessage(contact: Contact): string {
+        return `${contact.toString()}\nAre you sure that you want this contact? `;
+    }
+
+    const SEARCH_MAP: { [k: string]: SearchingContacts } = {
+        name: new SearchContactsByName(),
+        email: new SearchContactsByEmail(),
+        phone: new SearchContactsByPhone(),
+    };
+
+    const choices = Object.entries(SEARCH_MAP).map(([name, value]) => {
+        return {
+            name,
+            value,
+        };
+    });
+
+    const app = new App<Contact, string>(
+        managerLog,
+        newItemInputs,
+        createNewItem,
+        createConfirmMessage,
+        choices,
+    );
+
     if (process.argv.length > 2 && process.argv[2] == "--dummy") {
-        getData().forEach((contact) => app.addContact(baseManager, contact));
+        getData().forEach((contact) => managerLog.add(contact));
     }
 
     loop: while (true) {
@@ -63,24 +110,16 @@ async function main() {
         });
         switch (option) {
             case CHOICES.ADD:
-                app.addContact(managerLog, await app.getNewContact());
+                await app.addItem();
                 break;
             case CHOICES.REMOVE:
-                app.removeContact(managerLog, await app.getNewContact());
+                await app.removeItem();
                 break;
             case CHOICES.LIST:
-                app.listContacts(managerLog);
+                app.listItems();
                 break;
             case CHOICES.SEARCH:
-                let searchAlgorithm = await app.getNewSearchAlgorithm();
-                let searchTerm = await app.getNewSearchTerm(
-                    searchAlgorithm.searchBy(),
-                );
-                const contacts = app.searchContacts(
-                    managerLog,
-                    searchAlgorithm,
-                    searchTerm,
-                );
+                const contacts = await app.searchItem();
 
                 if (contacts.length === 0) {
                     console.log(
